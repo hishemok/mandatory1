@@ -15,7 +15,7 @@ class Wave2D:
         self.N = N
         x = np.linspace(0, 1, self.N+1)
         y = np.linspace(0, 1, self.N+1)
-        self.h = 1/self.N #not sure
+        
         self.xij , self.yij = np.meshgrid(x,y,indexing = 'ij',sparse=sparse)
 
     def D2(self, N):
@@ -28,7 +28,7 @@ class Wave2D:
         """Return the dispersion coefficient"""
         kx = sp.pi*self.mx
         ky = sp.pi*self.my
-        return sp.sqrt((kx**2 + ky**2) * self.c**2)
+        return sp.sqrt((kx**2 + ky**2))*self.c
 
     def ue(self, mx, my):
         """Return the exact standing wave"""
@@ -44,14 +44,7 @@ class Wave2D:
         mx, my : int
             Parameters for the standing wave
         """
-        # self.create_mesh(N)
-        # init0_expr = self.ue(mx, my).subs(t, 0)
-        # init0 = sp.lambdify((x, y), init0_expr)
-        # self.U0 = init0(self.xij, self.yij)
 
-        # init1_expr = self.ue(mx, my).subs(t, -self.dt)
-        # init1 = sp.lambdify((x, y), init1_expr)
-        # self.U1 = init1(self.xij, self.yij)
         self.create_mesh(N)
         D = self.apply_bcs() 
 
@@ -81,7 +74,7 @@ class Wave2D:
         ue = sp.lambdify((x, y), self.ue(self.mx, self.my).subs(t, t0))
         ue = ue(self.xij, self.yij)
 
-        return np.sqrt(self.h**2*np.sum((ue-u)**2))
+        return np.sqrt(self.h**2 * np.sum((ue - u)**2))
 
     def apply_bcs(self):
         """Apply the boundary conditions"""
@@ -122,10 +115,11 @@ class Wave2D:
         self.c = c
         self.mx = mx
         self.my = my
-        self.initialize(N, mx, my)
+        self.h = 1/self.N
+        self.create_mesh(N)
         D2 = self.apply_bcs() 
 
-        self.Unext, self.U, self.Uprev = np.zeros((3, self.N+1, self.N+1))
+
         self.initialize(N, mx, my)
 
         if store_data > 0:
@@ -276,7 +270,7 @@ def create_gif(boundary_condition: str, filename='solution.gif'):
     zmin, zmax = np.min(list(solutions.values())), np.max(list(solutions.values()))
 
     def update_plot(i, solutions):
-        if i % 2 == 0:
+        if i % 4 == 0:
             ax.clear()
             ax.set_xlabel('X-axis')
             ax.set_ylabel('Y-axis')
@@ -287,12 +281,12 @@ def create_gif(boundary_condition: str, filename='solution.gif'):
             return ax
 
 
-    ani = animation.FuncAnimation(fig, update_plot, frames=solutions.keys(), fargs=(solutions,), repeat=True, interval = 400)
+    ani = animation.FuncAnimation(fig, update_plot, frames=solutions.keys(), fargs=(solutions,), repeat=True, interval = 600)
 
 
     print("Saving GIF...")
     path = 'report/figures/' + filename
-    ani.save(path, writer='pillow', fps=15)
+    ani.save(path, writer='pillow', fps=25)
  
 
 
