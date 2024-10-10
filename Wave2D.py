@@ -206,7 +206,7 @@ def test_convergence_wave2d_neumann():
     r, E, h = solN.convergence_rates(mx=2, my=3)
     assert abs(r[-1]-2) < 0.05
 
-def test_exact_wave2d(m):
+def test_exact_wave2d():
     '''m_x = m_y = m
     C = 1/sqrt(2)
     check for l2 < 1e-12'''
@@ -219,8 +219,8 @@ def test_exact_wave2d(m):
     Nt = 20
     N = 64
 
-    _, err_dir = sol(N, Nt, cfl=cfl, mx=m, my=m, store_data=-1)
-    _, err_neu = solN(N, Nt, cfl=cfl, mx=m, my=m,store_data=-1)
+    _, err_dir = sol(N, Nt, cfl=cfl, mx=2, my=2, store_data=-1)
+    _, err_neu = solN(N, Nt, cfl=cfl, mx=2, my=2,store_data=-1)
 
     assert err_dir < tol, f"Test failed for Dirichlet BC: Error = {err_dir}, Tolerance = {tol}"
     assert err_neu < tol, f"Test failed for Neumann BC: Error = {err_neu}, Tolerance = {tol}"
@@ -293,7 +293,7 @@ def create_gif(boundary_condition: str, filename='solution.gif'):
 if __name__ == "__main__":
     test_convergence_wave2d()
     test_convergence_wave2d_neumann()
-    test_exact_wave2d(2)
+    test_exact_wave2d()
     create_gif('dirichlet','dirichletwave.gif')
     create_gif('neumann','neumannwave.gif')
     print("All tests passed")
