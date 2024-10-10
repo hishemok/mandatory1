@@ -245,8 +245,8 @@ def create_gif(boundary_condition: str, filename='solution.gif'):
         The name of the output GIF file.
     """
 
-    N = 256
-    Nt = 256
+    N = 250
+    Nt = 250
     cfl = 0.5
     mx = 2
     my = 2
@@ -276,22 +276,23 @@ def create_gif(boundary_condition: str, filename='solution.gif'):
     zmin, zmax = np.min(list(solutions.values())), np.max(list(solutions.values()))
 
     def update_plot(i, solutions):
-        ax.clear()
-        ax.set_xlabel('X-axis')
-        ax.set_ylabel('Y-axis')
-        ax.set_zlabel('U(t,x,y)')
-        ax.set_title(f'Wave Equation Solution with  {boundary_condition.capitalize()} BC')
-        ax.plot_surface(x, y, solutions[i], cmap='viridis')
-        ax.set_zlim(zmin, zmax)
-        return ax
+        if i % 2 == 0:
+            ax.clear()
+            ax.set_xlabel('X-axis')
+            ax.set_ylabel('Y-axis')
+            ax.set_zlabel('U(t,x,y)')
+            ax.set_title(f'Wave Equation Solution with  {boundary_condition.capitalize()} BC')
+            ax.plot_surface(x, y, solutions[i], cmap='viridis')
+            ax.set_zlim(zmin, zmax)
+            return ax
 
 
-    ani = animation.FuncAnimation(fig, update_plot, frames=solutions.keys(), fargs=(solutions,), repeat=False,interval = 1000)
+    ani = animation.FuncAnimation(fig, update_plot, frames=solutions.keys(), fargs=(solutions,), repeat=True, interval = 400)
 
 
     print("Saving GIF...")
     path = 'report/figures/' + filename
-    ani.save(path, writer='pillow', fps=25)
+    ani.save(path, writer='pillow', fps=15)
  
 
 
