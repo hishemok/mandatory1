@@ -239,8 +239,8 @@ def create_gif(boundary_condition: str, filename='solution.gif'):
         The name of the output GIF file.
     """
 
-    N = 250
-    Nt = 250
+    N = 200
+    Nt = 200
     cfl = 0.5
     mx = 2
     my = 2
@@ -281,7 +281,7 @@ def create_gif(boundary_condition: str, filename='solution.gif'):
             return ax
 
 
-    ani = animation.FuncAnimation(fig, update_plot, frames=solutions.keys(), fargs=(solutions,), repeat=True, interval = 600)
+    ani = animation.FuncAnimation(fig, update_plot, frames=solutions.keys(), fargs=(solutions,), repeat=True, interval = 100)
 
 
     print("Saving GIF...")
@@ -291,7 +291,7 @@ def create_gif(boundary_condition: str, filename='solution.gif'):
 
 
 if __name__ == "__main__":
-    test_convergence_wave2d()
+    # test_convergence_wave2d()
     test_convergence_wave2d_neumann()
     test_exact_wave2d(2)
     create_gif('dirichlet','dirichletwave.gif')
