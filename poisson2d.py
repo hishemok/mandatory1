@@ -32,29 +32,57 @@ class Poisson2D:
 
     def create_mesh(self, N):
         """Create 2D mesh and store in self.xij and self.yij"""
-        # self.xij, self.yij ...
-        raise NotImplementedError
+        self.N = N
+        self.h = self.L/self.N
+        x = np.linspace(0, self.L, self.N+1)
+        y = np.linspace(0, self.L, self.N+1)
+        self.xij , self.yij = np.meshgrid(x,y,indexing = 'ij')
+        return self.xij , self.yij 
 
     def D2(self):
         """Return second order differentiation matrix"""
-        raise NotImplementedError
+
+        D2 = sparse.diags([1, -2, 1], [-1, 0, 1], (self.N + 1, self.N +1),  format='lil')
+        D2[0,:4] = 2, -5, 4, -1
+        D2[-1, -4:] = -1, 4, -5, 2
+        return D2
 
     def laplace(self):
         """Return vectorized Laplace operator"""
-        raise NotImplementedError
+        I = np.eye(self.N+1)
+        D2 = self.D2()
+        laplace_x = sparse.kron(D2,I)/self.h**2 #second order differentiation matrix in x direction
+        laplace_y = sparse.kron(I,D2)/self.h**2 # and in y direction
+        tot = laplace_x + laplace_y
+        return tot.tocsr()  
 
     def get_boundary_indices(self):
         """Return indices of vectorized matrix that belongs to the boundary"""
-        raise NotImplementedError
+        #For N+1 x N+1 | exs: 9x9, top 0,1,...,8 left 0,9,18,...,72 right 8,17,26,...,80 bottom 72,73,...,80. total 81=9x9
+        top = np.arange(self.N+1)
+        bottom = np.arange(self.N + 1) + self.N * (self.N + 1)
+        left = np.arange(self.N+1, self.N**2 + self.N+1, self.N + 1)
+        right = np.arange(self.N, self.N**2 + self.N, self.N + 1)
+
+        return np.concatenate([top, bottom, left, right])
 
     def assemble(self):
         """Return assembled matrix A and right hand side vector b"""
-        # return A, b
-        raise NotImplementedError
+        A = self.laplace()
+        boundaries = self.get_boundary_indices()
+        A[boundaries] = 0 
+        A[boundaries, boundaries] = 1 #Dirichlet boundary conditions
+      
+        b = sp.lambdify((x, y), self.f)(self.xij, self.yij).flatten()
+        e = sp.lambdify((x, y), self.ue)(self.xij, self.yij).flatten()
+        b[boundaries] = e[boundaries]
+
+        return A,b
 
     def l2_error(self, u):
         """Return l2-error norm"""
-        raise NotImplementedError
+        ue = sp.lambdify((x, y), self.ue)(self.xij, self.yij)
+        return np.sqrt(self.h**2*np.sum((ue-u)**2))
 
     def __call__(self, N):
         """Solve Poisson's equation.
@@ -71,7 +99,7 @@ class Poisson2D:
         """
         self.create_mesh(N)
         A, b = self.assemble()
-        self.U = sparse.linalg.spsolve(A, b.flatten()).reshape((N+1, N+1))
+        self.U = sparse.linalg.spsolve(A.tocsr(), b.flatten()).reshape((N+1, N+1))
         return self.U
 
     def convergence_rates(self, m=6):
@@ -113,7 +141,32 @@ class Poisson2D:
         The value of u(x, y)
 
         """
-        raise NotImplementedError
+    
+        i = int(x / self.h)
+        j = int(y / self.h)
+
+        #find the lower corner points
+        x_low = i * self.h
+        y_low = j * self.h
+        #find the upper corner points
+        x_up = x_low + self.h
+        y_up = y_low + self.h
+
+        x_dist = np.array([x_up - x, x - x_low])
+        y_dist = np.array([y_up - y, y - y_low])
+
+        f = self.U
+        bl = f[i, j] #bottom left
+        br = f[i, j + 1] #bottom right
+        tl = f[i + 1, j] #top left
+        tr = f[i + 1, j + 1] #top right
+        U = np.array([[bl, br], [tl, tr]])
+
+        
+        ev = x_dist @ U @ y_dist / (self.h**2)
+        return ev
+    
+
 
 def test_convergence_poisson2d():
     # This exact solution is NOT zero on the entire boundary
@@ -126,6 +179,12 @@ def test_interpolation():
     ue = sp.exp(sp.cos(4*sp.pi*x)*sp.sin(2*sp.pi*y))
     sol = Poisson2D(1, ue)
     U = sol(100)
+    print(sol.eval(0.52, 0.63))
     assert abs(sol.eval(0.52, 0.63) - ue.subs({x: 0.52, y: 0.63}).n()) < 1e-3
     assert abs(sol.eval(sol.h/2, 1-sol.h/2) - ue.subs({x: sol.h/2, y: 1-sol.h/2}).n()) < 1e-3
+
+if __name__ == '__main__':
+    test_convergence_poisson2d()
+    test_interpolation()
+    print("All tests passed")
 
