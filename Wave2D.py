@@ -239,9 +239,9 @@ def create_gif(boundary_condition: str, filename='solution.gif'):
         The name of the output GIF file.
     """
 
-    N = 200
-    Nt = 200
-    cfl = 0.5
+    N = 256
+    Nt = 256
+    cfl = 1/np.sqrt(2)
     mx = 2
     my = 2
 
@@ -262,26 +262,20 @@ def create_gif(boundary_condition: str, filename='solution.gif'):
     ax.set_xlabel('X-axis')
     ax.set_ylabel('Y-axis')
     ax.set_zlabel('U(t,x,y)')
-    ax.set_title('Wave Equation Solution')
-
-
+    ax.set_title(f'Wave Equation Solution for {boundary_condition.capitalize()} BC')
     x,y = sol.xij, sol.yij
-
     zmin, zmax = np.min(list(solutions.values())), np.max(list(solutions.values()))
-
-    def update_plot(i, solutions):
-        if i % 4 == 0:
-            ax.clear()
-            ax.set_xlabel('X-axis')
-            ax.set_ylabel('Y-axis')
-            ax.set_zlabel('U(t,x,y)')
-            ax.set_title(f'Wave Equation Solution with  {boundary_condition.capitalize()} BC')
-            ax.plot_surface(x, y, solutions[i], cmap='viridis')
-            ax.set_zlim(zmin, zmax)
-            return ax
+    ax.set_zlim(zmin, zmax)
 
 
-    ani = animation.FuncAnimation(fig, update_plot, frames=solutions.keys(), fargs=(solutions,), repeat=True, interval = 100)
+    frames = []
+    for i, u in solutions.items():
+        if i%4 == 0: #downsample
+            frame = ax.plot_surface(x, y, u, cmap='inferno', linewidth=0, antialiased=False)
+            frames.append([frame])
+
+
+    ani = animation.ArtistAnimation(fig, frames, repeat=True, interval = 100, blit=True)
 
 
     print("Saving GIF...")
